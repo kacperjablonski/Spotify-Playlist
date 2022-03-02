@@ -2,13 +2,13 @@ import requests
 import json
 from flask import request, Flask, session, redirect
 
-CLIENT_ID = ""          # wprowadź Client_ID aplikacji
-CLIENT_SECRET = ""      # wprowadź Client_Secret aplikacji
-TOKEN_URL = "https://accounts.spotify.com/api/token"
-AUTH_URL = "https://accounts.spotify.com/authorize?"
+CLIENT_ID = "80f347b4665241248f3645cfef4da76e"          # wprowadź Client_ID aplikacji
+CLIENT_SECRET = "2f824eafb5924c949d59bd81a63609d2"      # wprowadź Client_Secret aplikacji
+AUTH_URL = "https://accounts.spotify.com/"
 REDIRECT_URI = "http://localhost:5000/authorize"
+SPOTI_URL = 'https://api.spotify.com/v1/'
 SCOPE = 'user-read-private user-read-email user-read-currently-playing user-modify-playback-state'
-AUTH_LINK = AUTH_URL + 'response_type=code&client_id=' + \
+AUTH_LINK = AUTH_URL+'authorize?' + 'response_type=code&client_id=' + \
 CLIENT_ID + '&redirect_uri=' + REDIRECT_URI + '&scope=' + SCOPE
 
 app = Flask(__name__)
@@ -35,21 +35,21 @@ def playlist():
     if not 'access_token' in session:
         return redirect('/')
     access_token = session['access_token']
-    recommendation_music = get_Recommendations(access_token)
+    headers = {'Authorization': 'Bearer ' +
+                   access_token, 'content_type': 'application/json'}
+    recommendation_music = get_Recommendations(headers)
     for next_music in range(50):
-        get_music_queue(access_token, recommendation_music[next_music]['id'])
+        get_music_queue(headers, recommendation_music[next_music]['id'])
     return 'Done!!!!'
 
 
-def get_Recommendations(token):
+def get_Recommendations(headers):
     try:
-        current_song = get_current_play_music(token)
+        current_song = get_current_play_music(headers)
         seed_artists = '?seed_artists=' + current_song['artists'][0]['id']
         seed_tracks = '&seed_tracks=' + current_song['id']
-        url = "https://api.spotify.com/v1/recommendations" + \
+        url = SPOTI_URL + "recommendations" + \
             seed_artists + seed_tracks + '&limit=50'
-        headers = {'Authorization': 'Bearer ' +
-                   token, 'content_type': 'application/json'}
         response = requests.get(url, headers=headers)
         song = response.json()
         return song['tracks']
@@ -57,11 +57,9 @@ def get_Recommendations(token):
         print(err)
 
 
-def get_current_play_music(token):
+def get_current_play_music(headers):
     try:
-        url = "https://api.spotify.com/v1/me/player/currently-playing"
-        headers = {'Authorization': 'Bearer ' +
-                   token, 'content_type': 'application/json'}
+        url = SPOTI_URL +"me/player/currently-playing"
         respone = requests.get(url, headers=headers)
         music = respone.json()
         return music['item']
@@ -69,12 +67,10 @@ def get_current_play_music(token):
         print(err)
 
 
-def get_music_queue(token, song):
+def get_music_queue(headers, song):
     try:
         music = '?uri=spotify:track:' + song
-        url = "https://api.spotify.com/v1/me/player/queue" + music
-        headers = {'Authorization': 'Bearer ' +
-                   token, 'content_type': 'application/json'}
+        url = SPOTI_URL + "me/player/queue" + music
         requests.post(url, headers=headers)
     except requests.exceptions.HTTPError as err:
         print(err)
@@ -85,7 +81,7 @@ def get_access_token(authorization_code):
         data = {'grant_type': 'authorization_code',
                 'code': authorization_code, 'redirect_uri': REDIRECT_URI}
         access_token_response = requests.post(
-            TOKEN_URL, data=data, verify=False, auth=(CLIENT_ID, CLIENT_SECRET))
+            AUTH_URL+'api/token', data=data, verify=False, auth=(CLIENT_ID, CLIENT_SECRET))
         tokens = json.loads(access_token_response.text)
         access_token = tokens['access_token']
         return access_token
