@@ -2,8 +2,8 @@ import requests
 import json
 from flask import request, Flask, session, redirect
 
-CLIENT_ID = "80f347b4665241248f3645cfef4da76e"          # wprowadź Client_ID aplikacji
-CLIENT_SECRET = "2f824eafb5924c949d59bd81a63609d2"      # wprowadź Client_Secret aplikacji
+CLIENT_ID = ""          # wprowadź Client_ID aplikacji
+CLIENT_SECRET = ""      # wprowadź Client_Secret aplikacji
 AUTH_URL = "https://accounts.spotify.com/"
 REDIRECT_URI = "http://localhost:5000/authorize"
 SPOTI_URL = 'https://api.spotify.com/v1/'
